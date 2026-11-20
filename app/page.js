@@ -1,14 +1,20 @@
 'use client';
 import { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import Reveal from '@/components/Reveal';
 import {
   Card, Chip, Eyebrow, GhostButton, H1Serif, H2Serif, PageFrame, PrimaryButton,
   ProgressBar, RiskBanner, RiskIcon, StatNumber,
 } from '@/components/ui';
 import { img, category, caseStudy } from '@/lib/images';
+
+const float = keyframes`
+  0%, 100% { transform: rotate(-1.5deg) translateY(0); }
+  50%      { transform: rotate(-1.5deg) translateY(-10px); }
+`;
 
 const Page = styled.div`
   background: ${({ theme }) => theme.colors.bg};
@@ -49,7 +55,9 @@ const KPIs = styled.div`
 const HeroCard = styled(Card)`
   padding: 24px;
   transform: rotate(-1.5deg);
-  @media (max-width: 640px) { transform: none; }
+  animation: ${float} 6s ease-in-out infinite;
+  @media (max-width: 640px) { transform: none; animation: none; }
+  @media (prefers-reduced-motion: reduce) { animation: none; }
 `;
 
 const HeroArt = styled.div`
@@ -103,6 +111,12 @@ const Grid4 = styled.div`
 
 const StepCard = styled(Card)`
   padding: 28px;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  &:hover {
+    transform: translateY(-4px);
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 12px 30px -16px rgba(124, 92, 255, 0.45);
+  }
   .n { font-family: ${({ theme }) => theme.fonts.serif}; font-size: 44px; color: ${({ theme }) => theme.colors.primary}; line-height: 1; margin-bottom: 20px; }
   .t { font-weight: 600; font-size: 17px; margin-bottom: 8px; }
   .d { color: ${({ theme }) => theme.colors.muted}; font-size: 14px; line-height: 1.55; }
@@ -119,6 +133,11 @@ const ModelCard = styled(Card)`
   padding: 32px;
   border-top: 3px solid ${({ $color }) => $color || '#7C5CFF'};
   position: relative;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 34px -18px ${({ $color }) => $color || '#7C5CFF'}80;
+  }
   .ribbon {
     position: absolute; top: -10px; right: 20px;
     background: ${({ theme }) => theme.colors.accent};
@@ -192,8 +211,12 @@ const CategoryCard = styled(Link)`
   background-image: linear-gradient(180deg, rgba(10,10,15,.1) 0%, rgba(10,10,15,.75) 85%), url(${({ $img }) => $img});
   background-size: cover;
   background-position: center;
-  transition: transform 160ms ease;
-  &:hover { transform: translateY(-2px); }
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+  &:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 16px 32px -18px rgba(124, 92, 255, 0.5);
+  }
   .lbl { font-weight: 600; font-size: 16px; }
   .ct { color: #D4FF4A; font-size: 12px; margin-top: 2px; }
 `;
@@ -217,6 +240,28 @@ const CaseStudyCard = styled(Card)`
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 20px 0; margin: 22px 0; border-top: 1px solid ${({ theme }) => theme.colors.border}; border-bottom: 1px solid ${({ theme }) => theme.colors.border}; }
   .stats strong { display: block; font-family: ${({ theme }) => theme.fonts.serif}; font-size: 26px; color: #D4FF4A; }
   .stats span { color: ${({ theme }) => theme.colors.muted}; font-size: 11px; }
+`;
+
+const ReviewCard = styled(Card)`
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  &:hover {
+    transform: translateY(-4px);
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 16px 36px -20px rgba(124, 92, 255, 0.55);
+  }
+  .img {
+    position: relative;
+    min-height: 160px;
+    background-size: cover;
+    background-position: center;
+    padding: 14px;
+    display: flex;
+    align-items: flex-end;
+  }
+  .body { padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 0; }
 `;
 
 const FAQGrid = styled.div`
@@ -346,12 +391,14 @@ export default function HomePage() {
             ['02', 'AI plans your growth', 'Marketing Studio builds a 30/60/90-day plan, estimates channel ROI, and sizes the capital you actually need.'],
             ['03', 'Receive partner proposals', 'Vetted sponsors and funding partners submit non-binding proposals. Compare terms side by side.'],
             ['04', 'Execute against milestones', 'Capital releases on agreed milestones. You report transparently. Both sides see the same numbers.'],
-          ].map(([n, t, d]) => (
-            <StepCard key={n}>
-              <div className="n">{n}</div>
-              <div className="t">{t}</div>
-              <div className="d">{d}</div>
-            </StepCard>
+          ].map(([n, t, d], i) => (
+            <Reveal key={n} delay={i * 100}>
+              <StepCard>
+                <div className="n">{n}</div>
+                <div className="t">{t}</div>
+                <div className="d">{d}</div>
+              </StepCard>
+            </Reveal>
           ))}
         </Grid4>
       </Section>
@@ -389,6 +436,7 @@ export default function HomePage() {
           <H2Serif style={{ maxWidth: 720 }}>Pick the model that matches the risk, not the hype.</H2Serif>
         </div>
         <Grid3>
+          <Reveal>
           <ModelCard $color="#7C5CFF">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Chip $variant="primary">Marketing Sponsorship</Chip>
@@ -404,6 +452,8 @@ export default function HomePage() {
               <li>Performance reporting only</li>
             </ul>
           </ModelCard>
+          </Reveal>
+          <Reveal delay={120}>
           <ModelCard $color="#D4FF4A">
             <div className="ribbon">MOST COMMON</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -420,6 +470,8 @@ export default function HomePage() {
               <li>Compliance review required</li>
             </ul>
           </ModelCard>
+          </Reveal>
+          <Reveal delay={240}>
           <ModelCard $color="#4ADE80">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Chip $variant="partner">Growth Partnership</Chip>
@@ -435,6 +487,7 @@ export default function HomePage() {
               <li>Agency vetting on file</li>
             </ul>
           </ModelCard>
+          </Reveal>
         </Grid3>
       </Section>
 
@@ -443,6 +496,7 @@ export default function HomePage() {
           <Eyebrow style={{ marginBottom: 14 }}>How a deal works</Eyebrow>
           <H2Serif style={{ maxWidth: 720 }}>From a funded campaign to milestone-gated growth capital.</H2Serif>
         </div>
+        <Reveal>
         <CaseStudyCard $img={caseStudy}>
           <div className="img" />
           <div className="body">
@@ -465,6 +519,7 @@ export default function HomePage() {
             </div>
           </div>
         </CaseStudyCard>
+        </Reveal>
       </Section>
 
       <Section $pad="0 72px 120px">
@@ -530,26 +585,29 @@ export default function HomePage() {
       </Section>
 
       <Section $pad="0 72px 120px">
-        <div style={{ marginBottom: 48 }}>
-          <Eyebrow style={{ marginBottom: 14 }}>Built for both sides</Eyebrow>
-          <H2Serif style={{ maxWidth: 720 }}>What creators and partners get on day one.</H2Serif>
-        </div>
+        <Reveal>
+          <div style={{ marginBottom: 48 }}>
+            <Eyebrow style={{ marginBottom: 14 }}>Built for both sides</Eyebrow>
+            <H2Serif style={{ maxWidth: 720 }}>What creators and partners get on day one.</H2Serif>
+          </div>
+        </Reveal>
         <Grid3>
           {[
-            { title: 'For funded creators', role: 'Creators', quote: 'List a funded campaign, compare partner proposals side by side, and plan the growth capital you can actually defend with the AI Studio.' },
-            { title: 'For sponsors & partners', role: 'Partners', quote: 'Browse verified funded campaigns, see backer data and fulfillment risk up front, and propose on terms you choose — sponsorship, revenue share, or growth.' },
-            { title: 'Milestone-gated by default', role: 'Both sides', quote: 'Nothing moves on a handshake. Capital releases tranche by tranche as each milestone is met, with both parties seeing the same numbers.' },
-          ].map((t) => (
-            <Card key={t.title} style={{ padding: 28 }}>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: 18, lineHeight: 1.5, marginBottom: 20, color: '#E6E6EE' }}>{t.quote}</div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', paddingTop: 16, borderTop: '1px solid #1F1F2A' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 11, background: 'linear-gradient(135deg,#7C5CFF,#D4FF4A)' }} />
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{t.title}</div>
-                  <div style={{ color: '#8A8A9E', fontSize: 12 }}>{t.role}</div>
+            { title: 'For funded creators', role: 'Creators', quote: 'List a funded campaign, compare partner proposals side by side, and plan the growth capital you can actually defend with the AI Studio.', image: img.studioDesk },
+            { title: 'For sponsors & partners', role: 'Partners', quote: 'Browse verified funded campaigns, see backer data and fulfillment risk up front, and propose on terms you choose — sponsorship, revenue share, or growth.', image: img.teamWorking },
+            { title: 'Milestone-gated by default', role: 'Both sides', quote: 'Nothing moves on a handshake. Capital releases tranche by tranche as each milestone is met, with both parties seeing the same numbers.', image: caseStudy },
+          ].map((t, i) => (
+            <Reveal key={t.title} delay={i * 120}>
+              <ReviewCard>
+                <div className="img" style={{ backgroundImage: `linear-gradient(180deg, rgba(10,10,15,.1), rgba(10,10,15,.65)), url(${t.image})` }}>
+                  <Chip $variant="primary">{t.role}</Chip>
                 </div>
-              </div>
-            </Card>
+                <div className="body">
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 18, lineHeight: 1.5, marginBottom: 20, color: '#E6E6EE' }}>{t.quote}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, paddingTop: 16, borderTop: '1px solid #1F1F2A' }}>{t.title}</div>
+                </div>
+              </ReviewCard>
+            </Reveal>
           ))}
         </Grid3>
       </Section>
@@ -607,6 +665,7 @@ export default function HomePage() {
       </Section>
 
       <Section $pad="0 72px 120px">
+        <Reveal>
         <CTABox>
           <H2Serif style={{ maxWidth: 720, margin: '0 auto 20px' }}>
             Funded is the start line.<br />Let&apos;s build the launch.
@@ -619,6 +678,7 @@ export default function HomePage() {
             <GhostButton>Talk to our team</GhostButton>
           </div>
         </CTABox>
+        </Reveal>
       </Section>
 
       </PageFrame>
