@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -72,6 +72,14 @@ const parseMoney = (v) => {
 const fmtK = (n) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${n || 0}`);
 
 export default function NewProposal() {
+  return (
+    <Suspense fallback={null}>
+      <NewProposalInner />
+    </Suspense>
+  );
+}
+
+function NewProposalInner() {
   const router = useRouter();
   const { data: session } = useSession();
   const sp = useSearchParams();
