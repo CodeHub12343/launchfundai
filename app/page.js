@@ -20,6 +20,7 @@ const float = keyframes`
 const Page = styled.div`
   background: ${({ theme }) => theme.colors.bg};
   color: ${({ theme }) => theme.colors.text};
+  overflow-x: hidden;
 `;
 
 const Section = styled.section`
@@ -156,8 +157,10 @@ const Studio = styled(Card)`
   position: relative;
   overflow: hidden;
   .halo { position: absolute; top: -80px; right: -80px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(124,92,255,.15), transparent 60%); pointer-events: none; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; position: relative; }
-  @media (max-width: 960px) { padding: 32px; .grid { grid-template-columns: 1fr; gap: 32px; } }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; position: relative; }
+  .grid > * { min-width: 0; }
+  @media (max-width: 960px) { padding: 32px; .grid { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+  @media (max-width: 640px) { padding: 24px 20px; }
 `;
 
 const Mock = styled.div`
@@ -224,9 +227,10 @@ const CategoryCard = styled(Link)`
 
 const CaseStudyCard = styled(Card)`
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   overflow: hidden;
-  @media (max-width: 960px) { grid-template-columns: 1fr; }
+  @media (max-width: 960px) { grid-template-columns: minmax(0, 1fr); }
+  > * { min-width: 0; }
   .img {
     min-height: 340px;
     background-image: url(${({ $img }) => $img});
@@ -236,11 +240,15 @@ const CaseStudyCard = styled(Card)`
   }
   .img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 60%, rgba(19,19,26,.6)); }
   @media (max-width: 960px) { .img { min-height: 220px; } }
-  .body { padding: 48px; }
-  @media (max-width: 640px) { .body { padding: 28px; } }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 20px 0; margin: 22px 0; border-top: 1px solid ${({ theme }) => theme.colors.border}; border-bottom: 1px solid ${({ theme }) => theme.colors.border}; }
-  .stats strong { display: block; font-family: ${({ theme }) => theme.fonts.serif}; font-size: 26px; color: #D4FF4A; }
+  .body { padding: 48px; min-width: 0; overflow-wrap: break-word; }
+  @media (max-width: 640px) { .body { padding: 24px; } }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 20px 0; margin: 22px 0; border-top: 1px solid ${({ theme }) => theme.colors.border}; border-bottom: 1px solid ${({ theme }) => theme.colors.border}; }
+  .stats strong { display: block; font-family: ${({ theme }) => theme.fonts.serif}; font-size: 24px; color: #D4FF4A; line-height: 1.1; }
   .stats span { color: ${({ theme }) => theme.colors.muted}; font-size: 11px; }
+  @media (max-width: 640px) {
+    .stats strong { font-size: 20px; }
+    .stats span { font-size: 10.5px; }
+  }
 `;
 
 const ReviewCard = styled(Card)`
@@ -505,7 +513,7 @@ export default function HomePage() {
               <Chip $variant="primary">Any category</Chip>
               <Chip $variant="success">Any structure</Chip>
             </div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 22, lineHeight: 1.4, marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(18px, 4.5vw, 22px)', lineHeight: 1.4, marginBottom: 16, overflowWrap: 'break-word' }}>
               You list a funded campaign. Partners submit proposals. You compare terms side by side, counter if needed, and sign the one that fits. Capital releases tranche by tranche as each milestone is met.
             </div>
             <div style={{ color: '#8A8A9E', fontSize: 13, marginBottom: 4 }}>The same flow for every deal on the platform.</div>
@@ -514,7 +522,7 @@ export default function HomePage() {
               <div><strong>Signed</strong><span>Agreed term sheet</span></div>
               <div><strong>Released</strong><span>Milestones met</span></div>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <PrimaryButton as={Link} href="/campaigns/new">List your campaign →</PrimaryButton>
               <GhostButton as={Link} href="/explore">Explore listings</GhostButton>
             </div>
@@ -533,7 +541,7 @@ export default function HomePage() {
               <p style={{ color: '#B8B8C8', fontSize: 16, lineHeight: 1.6, margin: '0 0 28px' }}>
                 Paste your Kickstarter URL and the Studio reads your category, audience, and backer velocity. You get a channel mix, a weekly test cadence, and a capital ask it can actually defend.
               </p>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <PrimaryButton as={Link} href="/studio">Try the Studio</PrimaryButton>
                 <GhostButton>See a sample plan</GhostButton>
               </div>
@@ -548,15 +556,15 @@ export default function HomePage() {
               <div className="inner">
                 <div style={{ fontSize: 12, color: '#8A8A9E' }}>Day 0–30 plan</div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 2, minWidth: 140, padding: 12, background: 'rgba(124,92,255,.12)', border: '1px solid rgba(124,92,255,.3)', borderRadius: 10 }}>
+                  <div style={{ flex: '2 1 120px', minWidth: 0, padding: 12, background: 'rgba(124,92,255,.12)', border: '1px solid rgba(124,92,255,.3)', borderRadius: 10 }}>
                     <div style={{ fontSize: 11, color: '#8A8A9E' }}>Meta ads</div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>$48k · CAC ~$22</div>
+                    <div style={{ fontWeight: 600, fontSize: 14, overflowWrap: 'break-word' }}>$48k · CAC ~$22</div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 100, padding: 12, background: 'rgba(212,255,74,.08)', border: '1px solid rgba(212,255,74,.25)', borderRadius: 10 }}>
+                  <div style={{ flex: '1 1 90px', minWidth: 0, padding: 12, background: 'rgba(212,255,74,.08)', border: '1px solid rgba(212,255,74,.25)', borderRadius: 10 }}>
                     <div style={{ fontSize: 11, color: '#8A8A9E' }}>Creator UGC</div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>$18k</div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 80, padding: 12, background: '#13131A', border: '1px solid #1F1F2A', borderRadius: 10 }}>
+                  <div style={{ flex: '1 1 70px', minWidth: 0, padding: 12, background: '#13131A', border: '1px solid #1F1F2A', borderRadius: 10 }}>
                     <div style={{ fontSize: 11, color: '#8A8A9E' }}>PR</div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>$8k</div>
                   </div>
