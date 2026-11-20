@@ -89,6 +89,68 @@ const Toast = styled.div`
   padding: 10px 14px; border-radius: 10px; font-size: 13px;
 `;
 
+const HeroBanner = styled.div`
+  height: 140px;
+  background:
+    radial-gradient(60% 120% at 10% 0%, rgba(124,92,255,.35), transparent 60%),
+    radial-gradient(60% 120% at 90% 100%, rgba(212,255,74,.14), transparent 60%),
+    linear-gradient(135deg,#171725,#0F0F18);
+  position: relative;
+  @media (max-width: 640px) { height: 96px; }
+`;
+
+const AvatarCircle = styled.div`
+  width: 112px; height: 112px; flex-shrink: 0; border-radius: 999px;
+  border: 4px solid ${({ theme }) => theme.colors.surface};
+  background-image: ${({ $img }) => ($img ? `url(${$img})` : 'none')};
+  background: ${({ $img }) => ($img ? undefined : 'linear-gradient(135deg,#7C5CFF,#D4FF4A)')};
+  background-size: cover; background-position: center;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #0A0A0F; font-size: 40;
+  cursor: pointer; position: relative;
+  margin-top: -56px;
+  @media (max-width: 640px) {
+    width: 84px; height: 84px; font-size: 30px; margin-top: -42px;
+  }
+`;
+
+const IdentityRow = styled.div`
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: flex-end;
+  @media (max-width: 1100px) {
+    grid-template-columns: auto 1fr;
+    .identity-actions { grid-column: 1 / -1; justify-content: flex-start; padding-top: 4px; }
+  }
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+    .identity-meta, .identity-actions { grid-column: 1; }
+  }
+`;
+
+const IdentityMeta = styled.div`
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  h1 {
+    margin: 0;
+    font-family: ${({ theme }) => theme.fonts.serif};
+    font-weight: 400;
+    font-size: 30px;
+    line-height: 1.1;
+    @media (max-width: 640px) { font-size: 24px; }
+  }
+  .meta {
+    color: ${({ theme }) => theme.colors.muted};
+    font-size: 13px;
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    a { color: #D0C8FF; }
+  }
+`;
+
 const sections = [
   ['profile', 'Profile'],
   ['account', 'Account & security'],
@@ -176,20 +238,21 @@ function SettingsInner() {
 }
 
 function ProfilePanel({ user, save, saving }) {
-  const [f, setF] = useState({
-    firstName: user.firstName || '', lastName: user.lastName || '', company: user.company || '',
-    bio: user.bio || '', location: user.location || '', website: user.website || '',
-  });
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/profile/stats', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).then((d) => d && setStats(d));
+  }, [user?._id]);
 
   async function handlePhoto(e) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    setUploadError('');
-    setUploading(true);
+    setUploadError(''); setUploading(true);
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -197,45 +260,220 @@ function ProfilePanel({ user, save, saving }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       await save('profile', { avatar: data.url });
-    } catch (err) {
-      setUploadError(err.message);
-    } finally {
-      setUploading(false);
-    }
+    } catch (err) { setUploadError(err.message); } finally { setUploading(false); }
   }
 
+  const full = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Your name';
+  const role = user.role === 'investor' ? 'Investor / Partner' : user.role === 'admin' ? 'Admin' : 'Creator';
+  const joined = user.createdAt ? new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : null;
+  const siteHost = (() => {
+    if (!user.website) return '';
+    try { return new URL(user.website.startsWith('http') ? user.website : `https://${user.website}`).host; } catch { return user.website; }
+  })();
+  const siteHref = user.website ? (user.website.startsWith('http') ? user.website : `https://${user.website}`) : '';
+  const money = (n) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${(n || 0).toLocaleString()}`);
+  const bio = user.bio?.trim();
+
+  const headerStats = user.role === 'investor'
+    ? [
+        { k: stats ? String(stats.pledges) : '—', l: 'Backed campaigns' },
+        { k: stats ? money(stats.raised) : '—', l: 'Capital deployed' },
+        { k: stats ? String(stats.acceptedProposals) : '—', l: 'Accepted deals' },
+      ]
+    : [
+        { k: stats ? String(stats.publishedCampaigns) : '—', l: 'Live campaigns' },
+        { k: stats ? money(stats.raised) : '—', l: 'Pledged to date' },
+        { k: stats ? String(stats.acceptedProposals) : '—', l: 'Accepted proposals' },
+      ];
+
+  const trust = [
+    { on: !!user.verified, label: 'Email verified', hint: user.verified ? user.email : 'Verify to improve match rate' },
+    { on: !!user.twoFactorEnabled, label: 'Two-factor on', hint: user.twoFactorEnabled ? 'Authenticator app active' : 'Enable in Account & security' },
+    { on: !!user.acceptedTerms, label: 'Terms accepted', hint: user.acceptedTerms ? 'Current terms accepted' : 'Pending acceptance' },
+  ];
+
   return (
-    <Card style={{ padding: 28 }}>
-      <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 20 }}>Profile</div>
-      <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 999, backgroundImage: user.avatar ? `url(${user.avatar})` : undefined, background: user.avatar ? undefined : 'linear-gradient(135deg,#7C5CFF,#D4FF4A)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#0A0A0F', fontSize: 24 }}>{!user.avatar && (f.firstName?.[0] || 'U')}</div>
-        <div>
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePhoto} style={{ display: 'none' }} />
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <GhostButton $size="sm" onClick={() => fileRef.current?.click()} disabled={uploading || saving}>
-              {uploading ? 'Uploading…' : user.avatar ? 'Replace photo' : 'Upload photo'}
-            </GhostButton>
-            {user.avatar && (
-              <GhostButton $size="sm" onClick={() => save('profile', { avatar: '' })} disabled={uploading || saving}>Remove</GhostButton>
-            )}
-          </div>
-          <div style={{ color: uploadError ? '#FF9CA5' : '#8A8A9E', fontSize: 11, marginTop: 6 }}>
-            {uploadError || 'JPEG, PNG, WebP or GIF · up to 5 MB'}
-          </div>
+    <>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePhoto} style={{ display: 'none' }} />
+        <ProfileHero
+          onAvatarClick={() => fileRef.current?.click()}
+          user={user}
+          uploading={uploading}
+        />
+        <div style={{ padding: '0 28px 20px' }}>
+          <ProfileIdentity
+            full={full}
+            role={role}
+            user={user}
+            joined={joined}
+            siteHref={siteHref}
+            siteHost={siteHost}
+            onEdit={() => setEditOpen(true)}
+            onPhoto={() => fileRef.current?.click()}
+            onRemovePhoto={() => save('profile', { avatar: '' })}
+            saving={saving}
+            uploading={uploading}
+          />
         </div>
+        {uploadError && <div style={{ padding: '0 28px 16px', color: '#FF9CA5', fontSize: 12 }}>{uploadError}</div>}
+        <div style={{ padding: '0 28px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, borderTop: '1px solid #1E1E28' }}>
+          {headerStats.map((s) => (
+            <div key={s.l} style={{ padding: '18px 4px' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{s.k}</div>
+              <div style={{ color: '#8A8A9E', fontSize: 12, marginTop: 2 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginTop: 20 }}>
+        <Card style={{ padding: 24, minHeight: 180 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontWeight: 600 }}>About</div>
+            <GhostButton $size="sm" onClick={() => setEditOpen(true)}>Edit</GhostButton>
+          </div>
+          {bio ? (
+            <div style={{ color: '#D0D0DC', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{bio}</div>
+          ) : (
+            <div style={{ color: '#6E6E80', fontSize: 13, lineHeight: 1.6 }}>
+              Add a short bio so {user.role === 'investor' ? 'creators' : 'partners'} know who you are and what you build.
+            </div>
+          )}
+
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #1E1E28', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+            <InfoCell label={user.role === 'investor' ? 'Firm or agency' : 'Studio or company'} value={user.company || '—'} />
+            <InfoCell label="Location" value={user.location || '—'} />
+            <InfoCell label="Website" value={siteHref ? <a href={siteHref} target="_blank" rel="noreferrer" style={{ color: '#D0C8FF' }}>{siteHost}</a> : '—'} />
+            <InfoCell label="Email" value={user.email} />
+          </div>
+        </Card>
+
+        <Card style={{ padding: 24 }}>
+          <div style={{ fontWeight: 600, marginBottom: 12 }}>Trust & verification</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {trust.map((t) => (
+              <div key={t.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, flexShrink: 0, borderRadius: 999, background: t.on ? 'rgba(74,222,128,.12)' : '#1E1E28', color: t.on ? '#4ADE80' : '#6E6E80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                  {t.on ? '✓' : '○'}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t.label}</div>
+                  <div style={{ color: '#8A8A9E', fontSize: 11, marginTop: 2, overflowWrap: 'anywhere' }}>{t.hint}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
-      <Form onSubmit={(e) => { e.preventDefault(); save('profile', f); }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Field><span className="lbl">First name</span><input value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} /></Field>
-          <Field><span className="lbl">Last name</span><input value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} /></Field>
+
+      {editOpen && (
+        <EditProfileModal
+          user={user}
+          saving={saving}
+          onClose={() => setEditOpen(false)}
+          onSave={async (data) => { const ok = await save('profile', data); if (ok) setEditOpen(false); }}
+        />
+      )}
+    </>
+  );
+}
+
+function ProfileHero({ onAvatarClick, user, uploading }) {
+  return <HeroBanner />;
+}
+
+function ProfileIdentity({ full, role, user, joined, siteHref, siteHost, onEdit, onPhoto, onRemovePhoto, saving, uploading }) {
+  return (
+    <IdentityRow>
+      <AvatarCircle
+        $img={user.avatar}
+        onClick={onPhoto}
+        role="button"
+        aria-label="Change profile photo"
+      >
+        {!user.avatar && (user.firstName?.[0] || 'U').toUpperCase()}
+        {uploading && (
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>Uploading…</div>
+        )}
+      </AvatarCircle>
+      <IdentityMeta className="identity-meta">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <h1>{full}</h1>
+          <Chip $variant="primary">{role}</Chip>
+          {user.verified && <Chip $variant="success">✓ Verified</Chip>}
         </div>
-        <Field><span className="lbl">Studio or company</span><input value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} /></Field>
-        <Field><span className="lbl">Public bio</span><textarea rows={3} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} /></Field>
-        <Field><span className="lbl">Location</span><input value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} /></Field>
-        <Field><span className="lbl">Website</span><input value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} /></Field>
-        <div><PrimaryButton disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</PrimaryButton></div>
-      </Form>
-    </Card>
+        <div className="meta">
+          {user.company && <span>{user.company}</span>}
+          {user.company && (user.location || siteHost || joined) && <span>·</span>}
+          {user.location && <span>{user.location}</span>}
+          {user.location && (siteHost || joined) && <span>·</span>}
+          {siteHref && <a href={siteHref} target="_blank" rel="noreferrer">{siteHost}</a>}
+          {siteHref && joined && <span>·</span>}
+          {joined && <span>Joined {joined}</span>}
+        </div>
+      </IdentityMeta>
+      <div className="identity-actions" style={{ display: 'flex', gap: 8, paddingBottom: 8, flexWrap: 'wrap' }}>
+        <GhostButton $size="sm" onClick={onPhoto} disabled={uploading || saving}>
+          {user.avatar ? 'Change photo' : 'Add photo'}
+        </GhostButton>
+        {user.avatar && (
+          <GhostButton $size="sm" onClick={onRemovePhoto} disabled={uploading || saving}>Remove</GhostButton>
+        )}
+        <PrimaryButton $size="sm" onClick={onEdit}>Edit profile</PrimaryButton>
+      </div>
+    </IdentityRow>
+  );
+}
+
+function InfoCell({ label, value }) {
+  return (
+    <div>
+      <div style={{ color: '#6E6E80', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
+      <div style={{ fontSize: 14, marginTop: 4, overflowWrap: 'anywhere' }}>{value}</div>
+    </div>
+  );
+}
+
+function EditProfileModal({ user, saving, onClose, onSave }) {
+  const [f, setF] = useState({
+    firstName: user.firstName || '', lastName: user.lastName || '', company: user.company || '',
+    bio: user.bio || '', location: user.location || '', website: user.website || '',
+  });
+  const left = 280 - (f.bio || '').length;
+
+  return (
+    <div
+      onClick={() => !saving && onClose()}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: 20, overflow: 'auto' }}
+    >
+      <Card onClick={(e) => e.stopPropagation()} style={{ padding: 28, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontWeight: 400, fontSize: 22 }}>Edit profile</div>
+          <button onClick={onClose} disabled={saving} style={{ background: 'transparent', border: 'none', color: '#8A8A9E', cursor: 'pointer', fontSize: 18 }}>×</button>
+        </div>
+        <Form onSubmit={(e) => { e.preventDefault(); onSave(f); }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field><span className="lbl">First name</span><input required value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} /></Field>
+            <Field><span className="lbl">Last name</span><input required value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} /></Field>
+          </div>
+          <Field><span className="lbl">{user.role === 'investor' ? 'Firm or agency' : 'Studio or company'}</span><input value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} /></Field>
+          <Field>
+            <span className="lbl">Public bio</span>
+            <textarea rows={4} maxLength={280} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} placeholder="What do you build? What are you looking for?" />
+            <div style={{ color: left < 20 ? '#FFB547' : '#6E6E80', fontSize: 11, marginTop: 4, textAlign: 'right' }}>{left} characters left</div>
+          </Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field><span className="lbl">Location</span><input placeholder="City, Country" value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} /></Field>
+            <Field><span className="lbl">Website</span><input placeholder="https://" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} /></Field>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <GhostButton type="button" onClick={onClose} disabled={saving}>Cancel</GhostButton>
+            <PrimaryButton type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</PrimaryButton>
+          </div>
+        </Form>
+      </Card>
+    </div>
   );
 }
 
