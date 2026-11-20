@@ -9,11 +9,10 @@ import { Card, Chip, DangerButton, Eyebrow, GhostButton, PrimaryButton } from '@
 import { PLAN_TIERS } from '@/lib/plans';
 
 const Wrap = styled.div`
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 32px;
   padding: 32px;
-  @media (max-width: 960px) { grid-template-columns: minmax(0, 1fr); padding: 20px 14px; gap: 14px; }
+  max-width: 1080px;
+  margin: 0 auto;
+  @media (max-width: 960px) { padding: 20px 14px; }
 `;
 
 const SettingsEyebrow = styled(Eyebrow)`
@@ -214,15 +213,6 @@ function SettingsInner() {
   return (
     <DashboardShell role={role} user={{ name, initials: (name || 'U').slice(0, 2).toUpperCase(), avatar: user?.avatar }}>
       <Wrap>
-        <div>
-          <SettingsEyebrow>Settings</SettingsEyebrow>
-          <SideNav>
-            {sections.map(([k, label]) => (
-              <NavBtn key={k} $on={tab === k} onClick={() => setTab(k)}>{label}</NavBtn>
-            ))}
-          </SideNav>
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {!user && <div style={{ color: '#8A8A9E' }}>Loading…</div>}
           {user && tab === 'profile' && <ProfilePanel user={user} save={save} saving={saving} />}
