@@ -104,7 +104,24 @@ const Btn = styled.button`
   &:hover { opacity: .9; }
 `;
 
-export default function CategorySelect({ value, onChange, label = 'Category', placeholder = 'Pick a category' }) {
+const CompactTrigger = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 14px;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.text};
+  border-radius: 999px;
+  font: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { border-color: ${({ theme }) => theme.colors.borderStrong}; }
+  .icon { font-size: 15px; }
+  .caret { color: ${({ theme }) => theme.colors.muted}; }
+`;
+
+export default function CategorySelect({ value, onChange, label = 'Category', placeholder = 'Pick a category', compact = false, includeAll = false }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const searchRef = useRef(null);
@@ -126,39 +143,63 @@ export default function CategorySelect({ value, onChange, label = 'Category', pl
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  const groupsWithAll = useMemo(() => {
+    if (!includeAll) return CATEGORY_GROUPS;
+    return [
+      { group: 'Browse', items: [{ key: 'All', icon: '✨', hint: 'Show every category' }] },
+      ...CATEGORY_GROUPS,
+    ];
+  }, [includeAll]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return CATEGORY_GROUPS;
-    return CATEGORY_GROUPS
+    if (!term) return groupsWithAll;
+    return groupsWithAll
       .map((g) => ({ ...g, items: g.items.filter((i) => i.key.toLowerCase().includes(term) || i.hint.toLowerCase().includes(term)) }))
       .filter((g) => g.items.length > 0);
-  }, [q]);
+  }, [q, groupsWithAll]);
 
   const totalShown = filtered.reduce((n, g) => n + g.items.length, 0);
 
   function hintFor(key) {
-    for (const g of CATEGORY_GROUPS) {
+    for (const g of groupsWithAll) {
       const hit = g.items.find((i) => i.key === key);
       if (hit) return hit.hint;
     }
     return '';
   }
+  function iconForKey(key) {
+    if (key === 'All') return '✨';
+    return iconFor(key);
+  }
 
   return (
     <>
-      <div style={{ fontSize: 12, color: '#B8B8C8', fontWeight: 500, marginBottom: 8 }}>{label}</div>
-      <Trigger type="button" onClick={() => setOpen(true)} aria-haspopup="dialog">
-        <div className="left">
-          <span className="icon">{current ? iconFor(current) : '＋'}</span>
-          <div style={{ minWidth: 0 }}>
-            <div className="label">{current || placeholder}</div>
-            {current && <div className="hint">{hintFor(current)}</div>}
-          </div>
-        </div>
-        <svg className="caret" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M6 9 L12 15 L18 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </Trigger>
+      {compact ? (
+        <CompactTrigger type="button" onClick={() => setOpen(true)} aria-haspopup="dialog">
+          <span className="icon">{current ? iconForKey(current) : '✨'}</span>
+          <span>{label ? `${label}: ` : ''}{current || placeholder}</span>
+          <svg className="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 9 L12 15 L18 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </CompactTrigger>
+      ) : (
+        <>
+          <div style={{ fontSize: 12, color: '#B8B8C8', fontWeight: 500, marginBottom: 8 }}>{label}</div>
+          <Trigger type="button" onClick={() => setOpen(true)} aria-haspopup="dialog">
+            <div className="left">
+              <span className="icon">{current ? iconForKey(current) : '＋'}</span>
+              <div style={{ minWidth: 0 }}>
+                <div className="label">{current || placeholder}</div>
+                {current && <div className="hint">{hintFor(current)}</div>}
+              </div>
+            </div>
+            <svg className="caret" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 9 L12 15 L18 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Trigger>
+        </>
+      )}
 
       {open && (
         <Overlay onClick={() => setOpen(false)}>
