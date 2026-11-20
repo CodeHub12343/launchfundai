@@ -5,12 +5,13 @@ import { requireUser } from '@/lib/session';
 import { slugify, randSuffix } from '@/lib/slug';
 import Campaign from '@/models/Campaign';
 import User from '@/models/User';
+import { CATEGORIES } from '@/lib/categories';
 
 const createSchema = z.object({
   title: z.string().trim().min(3, 'Title must be at least 3 characters'),
   tagline: z.string().trim().optional().default(''),
   description: z.string().trim().optional().default(''),
-  category: z.enum(['Hardware', 'Tech', 'Games', 'Food & Beverage', 'Fashion', 'Home', 'Publishing', 'Travel', 'Other']),
+  category: z.enum(CATEGORIES),
   platformUrl: z.string().trim().optional().default(''),
   pledged: z.coerce.number().nonnegative().default(0),
   goal: z.coerce.number().positive('Goal must be greater than 0'),

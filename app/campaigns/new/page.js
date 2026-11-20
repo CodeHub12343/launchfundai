@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react';
 import DashboardShell from '@/components/DashboardShell';
 import { Field, Form } from '@/components/AuthShell';
 import { Card, Chip, Eyebrow, GhostButton, PrimaryButton, RiskIcon } from '@/components/ui';
+import CategorySelect from '@/components/CategorySelect';
+import { CATEGORIES } from '@/lib/categories';
 
 const Wrap = styled.div`
   padding: 32px 32px 48px;
@@ -226,7 +228,7 @@ const stepList = [
   ['Review & submit', 'Final check'],
 ];
 
-const CATS = ['Hardware', 'Tech', 'Games', 'Food & Beverage', 'Fashion', 'Home', 'Publishing', 'Other'];
+const CATS = CATEGORIES;
 const MODELS = [
   ['sponsor', 'Marketing Sponsorship', 'Flat fee. No financial return.'],
   ['participation', 'Revenue Participation', 'Milestone-gated capital + share.'],
@@ -410,12 +412,10 @@ export default function CreateCampaign() {
                   <input value={form.platformUrl} onChange={up('platformUrl')} placeholder="https://kickstarter.com/projects/…" />
                 </Field>
                 <div>
-                  <span style={{ fontSize: 12, color: '#B8B8C8', fontWeight: 500, display: 'block', marginBottom: 8 }}>Category</span>
-                  <CategoryGrid>
-                    {CATS.map((c) => (
-                      <Cat key={c} type="button" $on={form.category === c} onClick={() => setForm((f) => ({ ...f, category: c }))}>{c}</Cat>
-                    ))}
-                  </CategoryGrid>
+                  <CategorySelect
+                    value={form.category}
+                    onChange={(k) => setForm((f) => ({ ...f, category: k }))}
+                  />
                 </div>
                 <Field>
                   <span className="lbl">Short description</span>

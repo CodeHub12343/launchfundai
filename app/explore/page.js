@@ -200,7 +200,7 @@ export default function ExplorePage() {
       <Pills>
         <span className="label">Category:</span>
         <Pill $on={cat === 'All'} onClick={() => setCat('All')}>All</Pill>
-        {['Hardware', 'Tech', 'Games', 'Food & Beverage', 'Fashion', 'Home', 'Publishing'].map((c) => (
+        {['Hardware', 'Tech', 'Games', 'Food & Beverage', 'Fashion', 'Home', 'Publishing', 'Film & Video', 'Music', 'Art', 'Design', 'Health & Wellness', 'Sports & Outdoors', 'Travel', 'Education', 'Other'].map((c) => (
           <Pill key={c} $on={cat === c} onClick={() => setCat(c)}>{c}</Pill>
         ))}
         <span className="spacer" />

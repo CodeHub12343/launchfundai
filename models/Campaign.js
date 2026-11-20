@@ -28,7 +28,7 @@ const CampaignSchema = new mongoose.Schema(
     description: { type: String, default: '' },
     category: {
       type: String,
-      enum: ['Hardware', 'Tech', 'Games', 'Food & Beverage', 'Fashion', 'Home', 'Publishing', 'Travel', 'Other'],
+      enum: ['Hardware', 'Tech', 'Robotics', 'Wearables', 'Games', 'Film & Video', 'Music', 'Art', 'Photography', 'Publishing', 'Design', 'Fashion', 'Beauty', 'Home', 'Food & Beverage', 'Health & Wellness', 'Sports & Outdoors', 'Travel', 'Pets', 'Education', 'Social Impact', 'Toys', 'Crafts & DIY', 'Automotive', 'Other'],
       required: true,
       index: true,
     },
