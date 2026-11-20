@@ -300,7 +300,7 @@ export default function HomePage() {
   }, []);
   return (
     <Page>
-      <Nav mobileCta />
+      <Nav />
 
       <PageFrame>
 
