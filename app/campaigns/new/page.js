@@ -405,7 +405,7 @@ export default function CreateCampaign() {
               <Form onSubmit={(e) => e.preventDefault()}>
                 <Field>
                   <span className="lbl">Campaign title</span>
-                  <input value={form.title} onChange={up('title')} placeholder="e.g. Lumen Mesh — Modular Smart Lighting" />
+                  <input value={form.title} onChange={up('title')} placeholder="e.g. Modular smart lighting system" />
                 </Field>
                 <Field>
                   <span className="lbl">Kickstarter or Indiegogo URL</span>

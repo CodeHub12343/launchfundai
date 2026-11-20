@@ -119,11 +119,11 @@ function SignupForm() {
         <NameRow>
           <Field>
             <span className="lbl">First name</span>
-            <input required placeholder="Maya" value={form.firstName} onChange={set('firstName')} />
+            <input required placeholder="First name" value={form.firstName} onChange={set('firstName')} />
           </Field>
           <Field>
             <span className="lbl">Last name</span>
-            <input required placeholder="Chen" value={form.lastName} onChange={set('lastName')} />
+            <input required placeholder="Last name" value={form.lastName} onChange={set('lastName')} />
           </Field>
         </NameRow>
         <Field>
