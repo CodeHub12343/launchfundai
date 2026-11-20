@@ -12,6 +12,7 @@ const signupSchema = z.object({
   role: z.enum(['creator', 'investor']),
   company: z.string().trim().optional().default(''),
   acceptedTerms: z.boolean().refine((v) => v === true, { message: 'You must agree to the terms' }),
+  plan: z.enum(['free', 'pro']).optional(),
 });
 
 export async function POST(req) {
@@ -36,6 +37,7 @@ export async function POST(req) {
     }
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+    const billingPlan = parsed.data.plan === 'pro' ? 'Creator Pro' : parsed.data.role === 'creator' ? 'Creator Free' : 'Investor';
     const user = await User.create({
       email: parsed.data.email,
       passwordHash,
@@ -44,6 +46,7 @@ export async function POST(req) {
       role: parsed.data.role,
       company: parsed.data.company,
       acceptedTerms: true,
+      billing: { plan: billingPlan },
     });
 
     return NextResponse.json(

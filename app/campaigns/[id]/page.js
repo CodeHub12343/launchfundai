@@ -10,6 +10,7 @@ import {
   RiskBanner, RiskIcon, StatNumber,
 } from '@/components/ui';
 import { img, campaignGallery } from '@/lib/images';
+import BackCampaignButton from '@/components/BackCampaignButton';
 
 const Page = styled.div`
   background: ${({ theme }) => theme.colors.bg};
@@ -257,8 +258,8 @@ export default function CampaignDetailsPage() {
             <div style={{ color: '#8A8A9E', fontSize: 12, marginTop: 6 }}>under {modelLabel[c.model] || 'Revenue Participation'} · milestone-gated</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
-            <PrimaryButton $full as={Link} href={`/proposals/new?campaign=${c.slug}`}>Submit Funding Interest →</PrimaryButton>
-            <GhostButton $full>Contact Creator</GhostButton>
+            <BackCampaignButton slug={c.slug} title={c.title} />
+            <GhostButton $full as={Link} href={`/proposals/new?campaign=${c.slug}`}>Submit Funding Interest →</GhostButton>
             <button style={{ background: 'transparent', border: 'none', color: '#8A8A9E', fontSize: 12, cursor: 'pointer', padding: 6 }}>♡ Save opportunity</button>
           </div>
           <div style={{ marginTop: 16, padding: 12, background: 'rgba(255,181,71,.06)', border: '1px solid rgba(255,181,71,.2)', borderRadius: 8, fontSize: 11, color: '#B8B8C8', lineHeight: 1.5 }}>

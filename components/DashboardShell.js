@@ -177,6 +177,7 @@ const navs = {
     { href: '/explore', label: 'Explore Campaigns' },
     { href: '/campaigns/new', label: 'List a Campaign' },
     { href: '/studio', label: 'AI Marketing Studio' },
+    { href: '/creator/payouts', label: 'Payouts' },
     { href: '/messages', label: 'Messages', danger: true },
     { href: '/notifications', label: 'Notifications' },
     { href: '/settings', label: 'Settings' },

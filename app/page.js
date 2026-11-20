@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import Reveal from '@/components/Reveal';
+import PricingCTA from '@/components/PricingCTA';
 import {
   Card, Chip, Eyebrow, GhostButton, H1Serif, H2Serif, PageFrame, PrimaryButton,
   ProgressBar, RiskBanner, RiskIcon, StatNumber,
@@ -622,7 +623,7 @@ export default function HomePage() {
             <div className="n">Creator</div>
             <div className="p">Free</div>
             <div className="d">List, discover partners, use AI drafts</div>
-            <GhostButton $full>Start listing</GhostButton>
+            <PricingCTA role="creator" label="Start listing" />
           </PriceCard>
           <PriceCard $featured>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -631,13 +632,13 @@ export default function HomePage() {
             </div>
             <div className="p">4% <span>of deployed capital</span></div>
             <div className="d">Full AI Studio, priority matching, legal templates</div>
-            <PrimaryButton $full>Upgrade</PrimaryButton>
+            <PricingCTA variant="primary" plan="pro" label="Upgrade" />
           </PriceCard>
           <PriceCard>
             <div className="n">Investor / Partner</div>
             <div className="p">1.5% <span>per deal</span></div>
             <div className="d">Deal flow, diligence tools, milestone tracking</div>
-            <GhostButton $full>Apply for access</GhostButton>
+            <PricingCTA role="investor" label="Apply for access" />
           </PriceCard>
         </Pricing>
       </Section>

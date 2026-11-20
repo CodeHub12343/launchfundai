@@ -29,6 +29,10 @@ const UserSchema = new mongoose.Schema(
       cardExpiry: { type: String, default: '' },
       taxId: { type: String, default: '' },
     },
+    stripeAccountId: { type: String, default: '' },
+    stripePayoutsEnabled: { type: Boolean, default: false },
+    stripeChargesEnabled: { type: Boolean, default: false },
+    stripeCustomerId: { type: String, default: '' },
     connectedAccounts: {
       type: Map,
       of: new mongoose.Schema({ meta: String, connected: Boolean }, { _id: false }),

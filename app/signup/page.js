@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import styled from 'styled-components';
 import AuthShell, { AuthSub, AuthTitle, Field, Form } from '@/components/AuthShell';
@@ -45,8 +45,20 @@ const ErrorBox = styled.div`
 `;
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const router = useRouter();
-  const [role, setRole] = useState('creator');
+  const sp = useSearchParams();
+  const roleParam = sp.get('role');
+  const planParam = sp.get('plan');
+  const callbackUrl = sp.get('callbackUrl') || '';
+  const [role, setRole] = useState(roleParam === 'investor' ? 'investor' : 'creator');
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', company: '', password: '', acceptedTerms: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,7 +73,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, role }),
+        body: JSON.stringify({ ...form, role, plan: planParam || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -75,7 +87,8 @@ export default function SignupPage() {
         setLoading(false);
         return;
       }
-      router.push(role === 'creator' ? '/creator' : '/investor');
+      const dest = callbackUrl || (role === 'creator' ? '/creator' : '/investor');
+      router.push(dest);
       router.refresh();
     } catch (err) {
       setError('Network error. Try again.');
