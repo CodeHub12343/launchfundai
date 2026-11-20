@@ -45,11 +45,32 @@ const KPIs = styled.div`
   padding-top: 28px;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
   max-width: 520px;
-  .k { min-width: 0; strong { display: block; font-size: 24px; font-weight: 700; } span { color: ${({ theme }) => theme.colors.muted}; font-size: 12px; line-height: 1.35; display: block; } }
+  .k { min-width: 0; }
+  .k strong {
+    display: block;
+    font-family: ${({ theme }) => theme.fonts.serif};
+    font-weight: 400;
+    font-size: clamp(32px, 6vw, 44px);
+    line-height: 1;
+    letter-spacing: -0.015em;
+    color: ${({ theme }) => theme.colors.text};
+    margin-bottom: 6px;
+  }
+  .k strong em {
+    font-style: italic;
+    color: ${({ theme }) => theme.colors.accent};
+    margin-right: 2px;
+  }
+  .k span {
+    color: ${({ theme }) => theme.colors.muted};
+    font-size: 12px;
+    line-height: 1.35;
+    display: block;
+  }
   @media (max-width: 640px) {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px; padding-top: 20px;
-    .k strong { font-size: 20px; }
+    .k strong { font-size: clamp(22px, 7vw, 28px); margin-bottom: 4px; }
     .k span { font-size: 11px; }
   }
 `;
@@ -332,7 +353,7 @@ export default function HomePage() {
               <GhostButton as={Link} href="/explore">Explore Campaigns</GhostButton>
             </div>
             <KPIs>
-              <div className="k"><strong>{fmtMoney(stats.deployedCapital)}</strong><span>Capital deployed</span></div>
+              <div className="k"><strong><em>$</em>{fmtMoney(stats.deployedCapital).replace(/^\$/, '')}</strong><span>Capital deployed</span></div>
               <div className="k"><strong>{stats.liveCampaigns.toLocaleString()}</strong><span>Live campaigns</span></div>
               <div className="k"><strong>{stats.partners.toLocaleString()}</strong><span>Partners onboarded</span></div>
             </KPIs>
