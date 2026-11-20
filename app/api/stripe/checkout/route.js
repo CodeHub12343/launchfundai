@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { dbConnect } from '@/lib/db';
 import { getUser } from '@/lib/session';
 import { getStripe, platformFeeBps, appUrl, isStripeConfigured } from '@/lib/stripe';
+import { resolvePlan } from '@/lib/plans';
 import Campaign from '@/models/Campaign';
 import User from '@/models/User';
 import Pledge from '@/models/Pledge';
@@ -37,7 +38,9 @@ export async function POST(req) {
     }
 
     const amountCents = Math.round(parsed.data.amount * 100);
-    const feeCents = Math.floor((amountCents * platformFeeBps()) / 10_000);
+    const tier = resolvePlan(creator);
+    const effectiveBps = Number.isFinite(tier?.platformFeeBps) ? tier.platformFeeBps : platformFeeBps();
+    const feeCents = Math.floor((amountCents * effectiveBps) / 10_000);
 
     const backer = await getUser();
     const stripe = getStripe();

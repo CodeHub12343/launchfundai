@@ -1,10 +1,12 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import styled from 'styled-components';
 import { useSession } from 'next-auth/react';
 import DashboardShell from '@/components/DashboardShell';
 import { Field, Form } from '@/components/AuthShell';
 import { Card, Chip, DangerButton, Eyebrow, GhostButton, PrimaryButton } from '@/components/ui';
+import { PLAN_TIERS } from '@/lib/plans';
 
 const Wrap = styled.div`
   display: grid;
@@ -107,8 +109,19 @@ const DEFAULT_PROVIDERS = [
 ];
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsInner />
+    </Suspense>
+  );
+}
+
+function SettingsInner() {
   const { data: session, update } = useSession();
-  const [tab, setTab] = useState('profile');
+  const sp = useSearchParams();
+  const initialTab = sp.get('tab');
+  const validTab = ['profile', 'account', 'billing', 'notifications', 'connected', 'team', 'legal', 'danger'].includes(initialTab) ? initialTab : 'profile';
+  const [tab, setTab] = useState(validTab);
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -149,7 +162,7 @@ export default function SettingsPage() {
           {!user && <div style={{ color: '#8A8A9E' }}>Loading…</div>}
           {user && tab === 'profile' && <ProfilePanel user={user} save={save} saving={saving} />}
           {user && tab === 'account' && <AccountPanel user={user} save={save} saving={saving} showToast={showToast} />}
-          {user && tab === 'billing' && <BillingPanel user={user} save={save} saving={saving} />}
+          {user && tab === 'billing' && <BillingPanel user={user} save={save} saving={saving} showToast={showToast} />}
           {user && tab === 'notifications' && <NotifPanel user={user} save={save} />}
           {user && tab === 'connected' && <ConnectedPanel user={user} save={save} />}
           {user && tab === 'team' && <TeamPanel user={user} save={save} saving={saving} />}
@@ -254,24 +267,208 @@ function AccountPanel({ user, save, saving, showToast }) {
   );
 }
 
-function BillingPanel({ user, save, saving }) {
+function BillingPanel({ user, save, saving, showToast }) {
   const b = user.billing || {};
-  const edit = (key, label) => { const v = prompt(label, b[key] || ''); if (v !== null) save('billing', { [key]: v }); };
+  const [plan, setPlan] = useState(null);
+  const [invoices, setInvoices] = useState(null);
+  const [totals, setTotals] = useState({ gross: 0, fees: 0 });
+  const [switching, setSwitching] = useState(false);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [editField, setEditField] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [editError, setEditError] = useState('');
+
+  const isInvestor = user.role === 'investor';
+  const currentPlanKey = isInvestor
+    ? 'investor'
+    : (b.plan || '').toLowerCase().includes('pro') ? 'pro' : 'free';
+  const tiers = PLAN_TIERS;
+
+  useEffect(() => {
+    fetch('/api/billing/invoices', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) { setInvoices(d.invoices || []); setTotals(d.totals || { gross: 0, fees: 0 }); } });
+  }, [user?._id]);
+
+  async function switchPlan(key) {
+    if (key === currentPlanKey || isInvestor) return;
+    setSwitching(true);
+    try {
+      const r = await fetch('/api/billing/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: key }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Could not switch plan');
+      await save('billing', { email: b.email || user.email });
+      showToast?.(`Switched to ${d.plan.label}`);
+    } catch (e) { showToast?.(e.message, true); } finally { setSwitching(false); }
+  }
+
+  async function openPortal() {
+    setPortalBusy(true);
+    try {
+      const r = await fetch('/api/billing/portal', { method: 'POST' });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Portal unavailable');
+      window.location.href = d.url;
+    } catch (e) { showToast?.(e.message, true); setPortalBusy(false); }
+  }
+
+  function startEdit(field, initial) {
+    setEditField(field); setEditValue(initial || ''); setEditError('');
+  }
+  async function commitEdit() {
+    const ok = await save('billing', { [editField]: editValue });
+    if (ok) setEditField(null);
+  }
+
+  const money = (n) => (typeof n === 'number' ? `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
+  const activeTier = tiers[currentPlanKey];
+
   return (
-    <Card style={{ padding: 28 }}>
-      <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 20 }}>Billing &amp; plan</div>
-      <div style={{ padding: 20, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.25)', borderRadius: 12, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontWeight: 600 }}>{b.plan || 'Creator Pro'}</div>
-          <div style={{ color: '#8A8A9E', fontSize: 12 }}>4% of deployed capital · renews with each deal</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <Card style={{ padding: 28 }}>
+        <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 6 }}>Current plan</div>
+        <div style={{ color: '#8A8A9E', fontSize: 13, marginBottom: 20 }}>
+          Fees are charged at the moment a backer pays. There&apos;s no monthly bill unless you switch to a subscription in Stripe.
         </div>
-        <GhostButton $size="sm" onClick={() => edit('plan', 'Plan name')}>Manage plan</GhostButton>
-      </div>
-      <Row><div><div className="k">Payment method</div><div className="d">{b.cardLast4 ? `Card · · · · ${b.cardLast4} — expires ${b.cardExpiry || '—'}` : 'No card on file'}</div></div><GhostButton $size="sm" onClick={() => edit('cardLast4', 'Card last 4')} disabled={saving}>Update</GhostButton></Row>
-      <Row><div><div className="k">Billing email</div><div className="d">{b.email || user.email}</div></div><GhostButton $size="sm" onClick={() => edit('email', 'Billing email')}>Change</GhostButton></Row>
-      <Row><div><div className="k">Invoices</div><div className="d">0 invoices · $0 YTD</div></div><GhostButton $size="sm">Download</GhostButton></Row>
-      <Row><div><div className="k">Tax ID</div><div className="d">{b.taxId || 'Not set'}</div></div><GhostButton $size="sm" onClick={() => edit('taxId', 'Tax ID')}>Edit</GhostButton></Row>
-    </Card>
+        <div style={{ padding: 20, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.25)', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 600, fontSize: 16 }}>{activeTier.label}</div>
+              {activeTier.recommended && <Chip $variant="primary">Recommended</Chip>}
+            </div>
+            <div style={{ color: '#8A8A9E', fontSize: 13, marginTop: 4 }}>{activeTier.price} <span style={{ color: '#6E6E80' }}>{activeTier.priceSuffix}</span></div>
+            <div style={{ color: '#B8B8C8', fontSize: 12, marginTop: 8 }}>Platform fee on pledges: <strong>{(activeTier.platformFeeBps / 100).toFixed(2)}%</strong></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <GhostButton $size="sm" onClick={openPortal} disabled={portalBusy}>
+              {portalBusy ? 'Opening Stripe…' : 'Manage in Stripe'}
+            </GhostButton>
+          </div>
+        </div>
+
+        {!isInvestor && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
+            {['free', 'pro'].map((k) => {
+              const t = tiers[k];
+              const isCurrent = k === currentPlanKey;
+              return (
+                <div key={k} style={{ padding: 16, borderRadius: 12, border: `1px solid ${isCurrent ? '#7C5CFF' : '#2A2A38'}`, background: isCurrent ? 'rgba(124,92,255,.06)' : 'transparent' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ fontWeight: 600 }}>{t.label}</div>
+                    {isCurrent ? <Chip $variant="success">Current</Chip> : t.recommended && <Chip $variant="primary">Recommended</Chip>}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#B8B8C8' }}>{t.price} <span style={{ color: '#6E6E80' }}>{t.priceSuffix}</span></div>
+                  <ul style={{ padding: 0, margin: '12px 0', listStyle: 'none', fontSize: 12, color: '#B8B8C8', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {t.features.map((f) => <li key={f}>· {f}</li>)}
+                  </ul>
+                  {!isCurrent && (
+                    <PrimaryButton $size="sm" onClick={() => switchPlan(k)} disabled={switching}>
+                      {switching ? 'Switching…' : k === 'free' ? 'Downgrade' : 'Upgrade'}
+                    </PrimaryButton>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      <Card style={{ padding: 28 }}>
+        <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 20 }}>Billing details</div>
+        <Row>
+          <div>
+            <div className="k">Billing email</div>
+            <div className="d">{b.email || user.email}</div>
+          </div>
+          <GhostButton $size="sm" onClick={() => startEdit('email', b.email || user.email)}>Change</GhostButton>
+        </Row>
+        <Row>
+          <div>
+            <div className="k">Tax ID</div>
+            <div className="d">{b.taxId || 'Not set'}</div>
+          </div>
+          <GhostButton $size="sm" onClick={() => startEdit('taxId', b.taxId || '')}>Edit</GhostButton>
+        </Row>
+        {user.role === 'creator' && (
+          <Row>
+            <div>
+              <div className="k">Payout account (Stripe Connect)</div>
+              <div className="d">{user.stripePayoutsEnabled ? 'Active — Stripe sends pledges directly to your bank.' : user.stripeAccountId ? 'Setup started — finish onboarding to receive payouts.' : 'Not connected — connect to receive pledges from backers.'}</div>
+            </div>
+            <GhostButton $size="sm" as="a" href="/creator/payouts">Open</GhostButton>
+          </Row>
+        )}
+      </Card>
+
+      <Card style={{ padding: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontWeight: 600, fontSize: 18 }}>{isInvestor ? 'Payment history' : 'Pledge activity'}</div>
+          <div style={{ fontSize: 12, color: '#8A8A9E' }}>
+            {invoices?.length || 0} paid · Gross {money(totals.gross)} · {isInvestor ? 'Paid' : 'Platform fee'} {money(totals.fees)}
+          </div>
+        </div>
+        {invoices === null && <div style={{ color: '#8A8A9E', fontSize: 13 }}>Loading…</div>}
+        {invoices?.length === 0 && (
+          <div style={{ padding: 20, textAlign: 'center', background: '#0A0A0F', border: '1px dashed #2A2A38', borderRadius: 10, color: '#8A8A9E', fontSize: 13 }}>
+            No {isInvestor ? 'payments' : 'completed pledges'} yet. Once backers check out, each payment will show here.
+          </div>
+        )}
+        {invoices?.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: '#8A8A9E', fontWeight: 500, borderBottom: '1px solid #2A2A38' }}>
+                  <th style={{ padding: '10px 6px' }}>Date</th>
+                  <th style={{ padding: '10px 6px' }}>Campaign</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'right' }}>Gross</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'right' }}>{isInvestor ? 'Charged' : 'Fee'}</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'right' }}>{isInvestor ? '' : 'Net'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr key={inv.id} style={{ borderBottom: '1px solid #1E1E28' }}>
+                    <td style={{ padding: '12px 6px', color: '#B8B8C8' }}>{new Date(inv.date).toLocaleDateString()}</td>
+                    <td style={{ padding: '12px 6px' }}><a href={`/campaigns/${inv.campaignSlug}`} style={{ color: '#D0C8FF' }}>{inv.campaignSlug}</a></td>
+                    <td style={{ padding: '12px 6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{money(inv.amount)}</td>
+                    <td style={{ padding: '12px 6px', textAlign: 'right', color: '#FF9CA5', fontVariantNumeric: 'tabular-nums' }}>−{money(isInvestor ? inv.amount : inv.platformFee)}</td>
+                    <td style={{ padding: '12px 6px', textAlign: 'right', color: '#4ADE80', fontVariantNumeric: 'tabular-nums' }}>{isInvestor ? '' : money(inv.net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ color: '#6E6E80', fontSize: 11, marginTop: 14 }}>
+          Formal tax invoices and card receipts live in the Stripe Billing Portal — use <strong>Manage in Stripe</strong> above.
+        </div>
+      </Card>
+
+      {editField && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 20 }} onClick={() => !saving && setEditField(null)}>
+          <Card onClick={(e) => e.stopPropagation()} style={{ padding: 24, width: '100%', maxWidth: 420 }}>
+            <div style={{ fontWeight: 600, marginBottom: 12 }}>
+              {editField === 'email' ? 'Billing email' : 'Tax ID'}
+            </div>
+            <input
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              placeholder={editField === 'email' ? 'name@company.com' : 'e.g. EU VAT or US EIN'}
+              style={{ width: '100%', padding: '10px 12px', background: '#0A0A0F', border: '1px solid #2A2A38', borderRadius: 8, color: 'inherit', font: 'inherit' }}
+            />
+            {editError && <div style={{ color: '#FF9CA5', fontSize: 12, marginTop: 8 }}>{editError}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <GhostButton onClick={() => setEditField(null)} disabled={saving}>Cancel</GhostButton>
+              <PrimaryButton onClick={commitEdit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</PrimaryButton>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
 

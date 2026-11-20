@@ -36,11 +36,8 @@ const accountSchema = z.object({
 }).strict();
 
 const billingSchema = z.object({
-  plan: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
-  cardLast4: z.string().max(4).optional(),
-  cardExpiry: z.string().max(8).optional(),
-  taxId: z.string().optional(),
+  taxId: z.string().trim().max(40).optional().or(z.literal('')),
 }).strict();
 
 const notifSchema = z.object({
