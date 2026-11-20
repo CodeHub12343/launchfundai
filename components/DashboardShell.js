@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { img } from '@/lib/images';
 
 const Shell = styled.div`
@@ -80,6 +80,49 @@ const NavItem = styled(Link)`
   }
   .badge.accent { background: ${({ theme }) => theme.colors.accent}; color: ${({ theme }) => theme.colors.bg}; }
   .badge.danger { background: ${({ theme }) => theme.colors.danger}; color: #fff; }
+`;
+
+const NavGroupHeader = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  color: ${({ theme, $active }) => ($active ? theme.colors.text : theme.colors.mutedSoft)};
+  background: ${({ $active }) => ($active ? 'rgba(124,92,255,.12)' : 'transparent')};
+  font-weight: ${({ $active }) => ($active ? 500 : 400)};
+  border: none;
+  cursor: pointer;
+  &:hover { background: ${({ theme, $active }) => ($active ? 'rgba(124,92,255,.12)' : theme.colors.surface2)}; color: ${({ theme }) => theme.colors.text}; }
+  .caret {
+    margin-left: auto;
+    transition: transform 160ms ease;
+    transform: rotate(${({ $open }) => ($open ? '90deg' : '0deg')});
+  }
+`;
+
+const SubList = styled.div`
+  display: ${({ $open }) => ($open ? 'flex' : 'none')};
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 4px 14px;
+  margin-left: 14px;
+  border-left: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const SubItem = styled(Link)`
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: ${({ theme, $active }) => ($active ? theme.colors.text : theme.colors.mutedSoft)};
+  background: ${({ $active }) => ($active ? 'rgba(124,92,255,.10)' : 'transparent')};
+  font-weight: ${({ $active }) => ($active ? 500 : 400)};
+  text-decoration: none;
+  &:hover { background: ${({ theme, $active }) => ($active ? 'rgba(124,92,255,.12)' : theme.colors.surface2)}; color: ${({ theme }) => theme.colors.text}; }
 `;
 
 const Main = styled.main`
@@ -171,6 +214,17 @@ const Scrim = styled.div`
   }
 `;
 
+const settingsChildren = [
+  { href: '/settings?tab=profile', label: 'Profile' },
+  { href: '/settings?tab=account', label: 'Account & security' },
+  { href: '/settings?tab=billing', label: 'Billing & plan' },
+  { href: '/settings?tab=notifications', label: 'Notifications' },
+  { href: '/settings?tab=connected', label: 'Connected accounts' },
+  { href: '/settings?tab=team', label: 'Team' },
+  { href: '/settings?tab=legal', label: 'Legal & compliance' },
+  { href: '/settings?tab=danger', label: 'Danger zone' },
+];
+
 const navs = {
   creator: [
     { href: '/creator', label: 'Overview' },
@@ -180,21 +234,21 @@ const navs = {
     { href: '/creator/payouts', label: 'Payouts' },
     { href: '/messages', label: 'Messages', danger: true },
     { href: '/notifications', label: 'Notifications' },
-    { href: '/settings', label: 'Settings' },
+    { href: '/settings', label: 'Settings', children: settingsChildren },
   ],
   investor: [
     { href: '/investor', label: 'Overview' },
     { href: '/explore', label: 'Explore Campaigns' },
     { href: '/messages', label: 'Messages', danger: true },
     { href: '/notifications', label: 'Notifications' },
-    { href: '/settings', label: 'Settings' },
+    { href: '/settings', label: 'Settings', children: settingsChildren },
   ],
   admin: [
     { href: '/admin', label: 'Overview' },
     { href: '/explore', label: 'All Campaigns' },
     { href: '/messages', label: 'Messages', danger: true },
     { href: '/notifications', label: 'Notifications' },
-    { href: '/settings', label: 'Platform settings' },
+    { href: '/settings', label: 'Platform settings', children: settingsChildren },
   ],
 };
 
@@ -203,6 +257,48 @@ const roleAccent = {
   investor: '#4ADE80',
   admin: '#D4FF4A',
 };
+
+function NavGroup({ item, pathname }) {
+  const parentBase = item.href.split('?')[0];
+  const parentActive = pathname === parentBase;
+  const [open, setOpen] = useState(parentActive);
+  useEffect(() => { if (parentActive) setOpen(true); }, [parentActive]);
+
+  return (
+    <>
+      <NavGroupHeader
+        $active={parentActive}
+        $open={open}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>{item.label}</span>
+        <svg className="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 6 L15 12 L9 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </NavGroupHeader>
+      <SubList $open={open}>
+        <Suspense fallback={item.children.map((c) => (
+          <SubItem key={c.href} href={c.href} $active={false}>{c.label}</SubItem>
+        ))}>
+          <NavGroupItems items={item.children} pathname={pathname} parentBase={parentBase} />
+        </Suspense>
+      </SubList>
+    </>
+  );
+}
+
+function NavGroupItems({ items, pathname, parentBase }) {
+  const sp = useSearchParams();
+  const currentTab = sp?.get('tab');
+  return items.map((c) => {
+    const base = c.href.split('?')[0];
+    const q = new URLSearchParams(c.href.split('?')[1] || '');
+    const tab = q.get('tab');
+    const active = pathname === base && (tab ? tab === currentTab : !currentTab);
+    return <SubItem key={c.href} href={c.href} $active={active}>{c.label}</SubItem>;
+  });
+}
 
 export default function DashboardShell({ role = 'creator', user, children, topBarRight }) {
   const [open, setOpen] = useState(false);
@@ -222,18 +318,22 @@ export default function DashboardShell({ role = 'creator', user, children, topBa
         </SectionLabel>
         <NavList>
           {items.map((i) => (
-            <NavItem
-              key={i.href + i.label}
-              href={i.href}
-              $active={pathname === i.href.split('?')[0]}
-            >
-              {i.label}
-              {i.badge && (
-                <span className={`badge ${i.accent ? 'accent' : ''} ${i.danger ? 'danger' : ''}`}>
-                  {i.badge}
-                </span>
-              )}
-            </NavItem>
+            i.children ? (
+              <NavGroup key={i.href + i.label} item={i} pathname={pathname} />
+            ) : (
+              <NavItem
+                key={i.href + i.label}
+                href={i.href}
+                $active={pathname === i.href.split('?')[0]}
+              >
+                {i.label}
+                {i.badge && (
+                  <span className={`badge ${i.accent ? 'accent' : ''} ${i.danger ? 'danger' : ''}`}>
+                    {i.badge}
+                  </span>
+                )}
+              </NavItem>
+            )
           ))}
         </NavList>
       </Aside>

@@ -1,6 +1,6 @@
 'use client';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import styled from 'styled-components';
 import { useSession } from 'next-auth/react';
 import DashboardShell from '@/components/DashboardShell';
@@ -181,9 +181,12 @@ export default function SettingsPage() {
 function SettingsInner() {
   const { data: session, update } = useSession();
   const sp = useSearchParams();
-  const initialTab = sp.get('tab');
-  const validTab = ['profile', 'account', 'billing', 'notifications', 'connected', 'team', 'legal', 'danger'].includes(initialTab) ? initialTab : 'profile';
-  const [tab, setTab] = useState(validTab);
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentTab = sp.get('tab');
+  const validTab = ['profile', 'account', 'billing', 'notifications', 'connected', 'team', 'legal', 'danger'].includes(currentTab) ? currentTab : 'profile';
+  const tab = validTab;
+  const setTab = (k) => router.push(`${pathname}?tab=${k}`, { scroll: false });
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
