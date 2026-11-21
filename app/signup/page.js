@@ -140,7 +140,7 @@ function SignupForm() {
         </Field>
         <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#8A8A9E', lineHeight: 1.5 }}>
           <input required type="checkbox" style={{ accentColor: '#7C5CFF', marginTop: 2, flexShrink: 0 }} checked={form.acceptedTerms} onChange={set('acceptedTerms')} />
-          <span>I agree to the <Link href="#">Terms</Link>, <Link href="#">Privacy</Link>, and the <Link href="#">Risk Disclosures</Link>. I understand funding is not risk-free and returns are not guaranteed.</span>
+          <span>I agree to the <Link href="/legal#terms">Terms</Link>, <Link href="/legal#privacy">Privacy</Link>, and the <Link href="/legal#risk">Risk Disclosures</Link>. I understand funding is not risk-free and returns are not guaranteed.</span>
         </label>
         <PrimaryButton $full type="submit" disabled={loading} style={{ marginTop: 4, opacity: loading ? 0.6 : 1 }}>
           {loading ? 'Creating account…' : 'Create account →'}

@@ -413,7 +413,7 @@ export default function HomePage() {
             <Eyebrow style={{ marginBottom: 14 }}>How post-goal funding works</Eyebrow>
             <H2Serif>From funded to flagship,<br />in four deliberate steps.</H2Serif>
           </div>
-          <Link href="#" style={{ fontSize: 14 }}>Read the full playbook →</Link>
+          <Link href="/playbook" style={{ fontSize: 14 }}>Read the full playbook →</Link>
         </div>
         <Grid4>
           {[
@@ -564,7 +564,7 @@ export default function HomePage() {
               </p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <PrimaryButton as={Link} href="/studio">Try the Studio</PrimaryButton>
-                <GhostButton>See a sample plan</GhostButton>
+                <GhostButton as={Link} href="/studio?sample=1">See a sample plan</GhostButton>
               </div>
             </div>
             <Mock>
@@ -610,7 +610,7 @@ export default function HomePage() {
               Campaigns can miss fulfillment, pivot, or underperform. Revenue participation is only available in jurisdictions where it is legally permitted, is milestone-gated, and is never guaranteed. Every opportunity on LaunchFund AI discloses its structure, milestones, and known risks. Read them before proposing capital.
             </div>
           </div>
-          <Link href="#" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>Full risk policy →</Link>
+          <Link href="/legal#risk" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>Full risk policy →</Link>
         </RiskBanner>
       </Section>
 
@@ -704,8 +704,8 @@ export default function HomePage() {
             Turn a successful Kickstarter into a market-ready brand — with vetted partners and milestone-gated growth capital.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <PrimaryButton as={Link} href="/creator">List My Campaign →</PrimaryButton>
-            <GhostButton>Talk to our team</GhostButton>
+            <PrimaryButton as={Link} href="/campaigns/new">List My Campaign →</PrimaryButton>
+            <GhostButton as={Link} href="/contact">Talk to our team</GhostButton>
           </div>
         </CTABox>
         </Reveal>

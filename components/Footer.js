@@ -82,28 +82,28 @@ export default function Footer() {
         <Col>
           <div className="title">Company</div>
           <div className="links">
-            <Link href="#">About</Link>
-            <Link href="#">Careers</Link>
-            <Link href="#">Press</Link>
-            <Link href="#">Contact</Link>
+            <Link href="/about">About</Link>
+            <Link href="/about#careers">Careers</Link>
+            <Link href="/about#press">Press</Link>
+            <Link href="/contact">Contact</Link>
           </div>
         </Col>
         <Col>
           <div className="title">Legal</div>
           <div className="links">
-            <Link href="#">Risk Disclosures</Link>
-            <Link href="#">Terms</Link>
-            <Link href="#">Privacy</Link>
-            <Link href="#">Compliance</Link>
+            <Link href="/legal#risk">Risk Disclosures</Link>
+            <Link href="/legal#terms">Terms</Link>
+            <Link href="/legal#privacy">Privacy</Link>
+            <Link href="/legal#compliance">Compliance</Link>
           </div>
         </Col>
         <Col>
           <div className="title">Resources</div>
           <div className="links">
-            <Link href="#">Playbook</Link>
-            <Link href="#">Case Studies</Link>
-            <Link href="#">Blog</Link>
-            <Link href="#">Help Center</Link>
+            <Link href="/playbook">Playbook</Link>
+            <Link href="/playbook#case-studies">Case Studies</Link>
+            <Link href="/playbook#blog">Writing</Link>
+            <Link href="/contact#help">Help Center</Link>
           </div>
         </Col>
       </Grid>

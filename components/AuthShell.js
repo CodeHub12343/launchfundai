@@ -111,13 +111,13 @@ export default function AuthShell({ children, side = 'left' }) {
       <Side>
         <TopBar>
           <Logo />
-          <Link href="#" className="help">Need help?</Link>
+          <Link href="/contact#help" className="help">Need help?</Link>
         </TopBar>
         <Center>
           <Inner>{children}</Inner>
         </Center>
         <div style={{ fontSize: 11, color: '#6A6A7E', textAlign: 'center' }}>
-          © 2026 LaunchFund AI · <Link href="#">Terms</Link> · <Link href="#">Privacy</Link>
+          © 2026 LaunchFund AI · <Link href="/legal#terms">Terms</Link> · <Link href="/legal#privacy">Privacy</Link>
         </div>
       </Side>
       {side === 'right' && visual}
